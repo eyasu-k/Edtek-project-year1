@@ -1,0 +1,55 @@
+This file contains the protocol used by the client and the server.
+
+client -> server protocols:
+
+    command:data:data2
+    #valid commands are: "upload", "download", "list", "delete"
+    # data and data2 can be anything according to the command type.
+
+    example of the commands:
+
+        "upload":
+            the protocol to upload a file: command:filename:size
+            exxample: upload:file.txt:1024
+        
+        "download":
+            the protocol to upload a file: command:filename
+            example: download:file.txt
+        
+        "list":
+            the protocol to get a list of files: command (no data needed.)
+            example: list
+        
+        "delete":
+            the protocol to delete a file: command:filename
+            example: delete:file.txt
+        
+server -> client protocols:
+     command:data
+     #valid commands are: "success", "r_download", "r_list", "error"
+     #'data' is always a comma separated strings or a plain string.
+    
+    example of the commands:
+
+        "success":
+            this command is sent when a command from the client is successful, else an error is sent. (check the "error" response)
+        
+        "r_download":
+            this command is sent with a file contents if the file is found in the server, else an error is sent. (check the "error" response)
+            example: r_download:file.txt:(content of file.txt)
+        
+        "r_list":
+            this command is a response for the "list" command.
+            example: r_list:file.txt, file2.txt, file3.example
+        
+        "error":
+            this command is sent when there is an invalid command parameters: error:error_code
+            example: error:5 (check error codes)
+
+
+error codes:
+    0: invalid command
+    1: file already stored in a server (an uploading error)
+    2: file not found (a downloading/deletion error)
+
+
