@@ -2,6 +2,10 @@ import os
 
 #this module deals with all file modifications the server requires.
 
+def create_new_folder(folder_path: str)-> None:
+    if not os.path.isdir(folder_path):
+        os.mkdir(folder_path)
+
 def file_exists(filepath: str)-> bool:
     return os.path.exists(filepath)
 
