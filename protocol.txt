@@ -2,7 +2,7 @@ This file contains the protocol used by the client and the server.
 
 client -> server protocols:
 
-    command:data:data2
+    command:data:data2:data3:data_n
     #valid commands are: "upload", "download", "list", "delete"
     # data and data2 can be anything according to the command type.
 
@@ -10,11 +10,14 @@ client -> server protocols:
 
         "upload":
             the protocol to upload a file: command:filename:size
-            exxample: upload:file.txt:1024
-        
+            example: upload:file.txt:1024:(file content as a string)
+
+            after sending the request, the client will then send the file content as a string to complete the upload process.
         "download":
-            the protocol to upload a file: command:filename
+            the protocol to download a file: command:filename
             example: download:file.txt
+
+            after sending the download request, the client will receive the file content as a string. (check "r_download" in the server->client protocols)
         
         "list":
             the protocol to get a list of files: command (no data needed.)
