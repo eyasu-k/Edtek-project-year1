@@ -4,16 +4,16 @@ import constants as const
 PORT = 12345
 DEBUG_PRINTS = False
 
-def debug(*msg: any)-> None:
+def debug(*msg)-> None:
     if DEBUG_PRINTS:
         print("Debug print: "*msg)
 
 
-def ph(*_)-> any:#ph = place holder
+def foo(*_)-> any:#placeholder
     pass
 
 def serve_client(client: socket.socket)-> bool:#TODO: add exceptions
-    actions = {const.UPLOAD: ph, const.DOWNLOAD: ph, const.LIST: ph, const.DELETE: ph}
+    actions = {const.UPLOAD: foo, const.DOWNLOAD: foo, const.LIST: foo, const.DELETE: foo}
     try:
         new_request = client.recv(const.DEFAULT_BUFFER_SIZE)
         command, *parameters = new_request.split(const.DELIMITER)
@@ -25,12 +25,12 @@ def serve_client(client: socket.socket)-> bool:#TODO: add exceptions
     
     
     
-def start_server()-> bool:#TODO: add exceptions if neseccary...
+def start_server()-> bool:#TODO: add exceptions if necessary...
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as new_socket:
             new_socket.bind(("", PORT))
-            ear_socket = new_socket.listen(1)
-            client, _ = ear_socket.accept()
+            new_socket.listen(1)
+            client, _ = new_socket.accept()
             while serve_client(client):
                 continue
         return True
