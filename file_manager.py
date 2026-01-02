@@ -9,15 +9,15 @@ def create_new_folder(folder_path: str)-> None:
 def file_exists(filepath: str)-> bool:
     return os.path.exists(filepath)
 
-def get_file(filepath: str)-> str:
+def get_file(filepath: str)-> bytes:
     with open(filepath, 'rb') as file:
-        return file.read().decode()
+        return file.read()
 
-def create_file(filename: str, file_contents: str)-> False:
+def create_file(filename: str, file_contents: bytes)-> False:
     if os.path.exists(filename):
         return False
     with open(filename, 'wb') as new_file:
-        new_file.write(file_contents.encode())
+        new_file.write(file_contents)
     
 def get_files_list(folder_path: str)-> list[str]:
     files = os.listdir(folder_path)
