@@ -12,7 +12,7 @@ client -> server protocols:
             the protocol to upload a file: command:filename:size
             example: upload:file.txt:1024:(file content as a string)
 
-            after sending the request, the client will then send the file content as a string to complete the upload process.
+            if a file with the same name exists in the server, the file will be overwritten.
         "download":
             the protocol to download a file: command:filename
             example: download:file.txt
@@ -29,7 +29,7 @@ client -> server protocols:
         
 server -> client protocols:
      command:data
-     #valid commands are: "success", "r_download", "r_list", "error"
+     #valid commands are: "success", "r_download", "r_list"
      #'data' is always a comma separated strings or a plain string.
     
     example of the commands:
@@ -44,15 +44,3 @@ server -> client protocols:
         "r_list":
             this command is a response for the "list" command: r_list:filename;file size, file2name ;file2 size
             example: r_list:file.txt;file.txt size, file2.txt; file2.txt size, file3.example; file3.example size
-        
-        "error":
-            this command is sent when there is an invalid command parameters: error:error_code
-            example: error:5 (check error codes)
-
-
-error codes:
-    0: invalid command
-    1: file already stored in a server (an uploading error)
-    2: file not found (a downloading/deletion error)
-
-
