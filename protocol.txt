@@ -39,8 +39,8 @@ server -> client protocols:
             example: r_download:file.txt:(content of file.txt)
         
         "r_list":
-            this command is a response for the "list" command.
-            example: r_list:file.txt, file2.txt, file3.example
+            this command is a response for the "list" command: r_list:filename;file size, file2name ;file2 size
+            example: r_list:file.txt;file.txt size, file2.txt; file2.txt size, file3.example; file3.example size
         
         "error":
             this command is sent when there is an invalid command parameters: error:error_code
