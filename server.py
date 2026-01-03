@@ -8,7 +8,7 @@ DEBUG_PRINTS = False
 
 def debug(*msg)-> None:
     if DEBUG_PRINTS:
-        print("Debug print: "*msg)
+        print("Debug print: ", *msg)
 
 def receive_file(client: socket.socket, file_name: str, file_size: str, *_)-> None:
     file_path = SERVER_FILES_FOLDER_NAME+'/'+file_name
