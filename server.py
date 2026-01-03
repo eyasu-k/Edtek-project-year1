@@ -26,11 +26,11 @@ def send_file_list(client: socket.socket, *_)-> None:
     files = const.FILES_DELIMITER.join(files)
     client.sendall(files.encode())
 
-def delete_file(client: socket.socket, file_name: str,*_)-> None:
+def delete_file(_client: socket.socket, file_name: str,*_)-> None:
     file_path = const.SERVER_FILES_FOLDER_NAME+'/'+file_name
     explorer.delete_file(file_path)
 
-def serve_client(client: socket.socket)-> bool:#TODO: add exceptions
+def serve_client(client: socket.socket)-> bool:
     actions = {const.UPLOAD: receive_file, const.DOWNLOAD: send_file, const.LIST: send_file_list, const.DELETE: delete_file}
     try:
         new_request = client.recv(const.DEFAULT_BUFFER_SIZE)
@@ -43,7 +43,7 @@ def serve_client(client: socket.socket)-> bool:#TODO: add exceptions
     
     
     
-def start_server()-> bool:#TODO: add exceptions if necessary...
+def start_server()-> bool:
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as new_socket:
             new_socket.bind(("", PORT))
