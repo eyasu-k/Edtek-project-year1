@@ -31,3 +31,6 @@ def delete_file(filename: str)-> bool:
 
 def get_downloads_path():
     return os.path.join(os.path.expanduser('~'), "Downloads")
+
+def get_file_name(file_path: str)-> str:
+    return os.path.basename(file_path)
