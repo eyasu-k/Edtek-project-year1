@@ -4,7 +4,7 @@ import file_manager as explorer
 from constants import DOWNLOAD, DEFAULT_BUFFER_SIZE
 
 DEBUG_PRINTS = True
-IP = "127.0.0.1"
+IP = "192.168.1.203"#"127.0.0.1"
 PORT = 12345
 
 DEFAULT_DOWNLOAD_DST = explorer.get_downloads_path()
@@ -14,7 +14,7 @@ def debug(*msg)-> None:
     if DEBUG_PRINTS:
         print("Debug print: ", *msg)
 
-def upload_file(server: socket.socket, file_path: str)-> None:
+def upload_file(server: socket.socket, file_path: str)-> bool:
     file = explorer.get_file(file_path)
     file_size = len(file)
     file_name = explorer.get_file_name(file_path)
@@ -22,9 +22,14 @@ def upload_file(server: socket.socket, file_path: str)-> None:
     request = const.DELIMITER.join([const.UPLOAD, file_name, str(file_size)])
     server.sendall(request.encode())
     debug("first upload request sent. the request:", request)
-    server.sendall(file)
-    debug("second upload data sent: the data: ")
-    debug(file)
+    response = server.recv(1024).decode()
+    if response == const.SUCCESS:
+        server.sendall(file)
+        debug("second upload data sent: the data: ")
+        debug(file)
+        return True
+    return False
+
 
 def download_file(server: socket.socket, file_name: str, file_size: int)-> None:
     request = const.DELIMITER.join([DOWNLOAD, file_name])
@@ -62,7 +67,9 @@ def connect_to_server()-> socket.socket:
 def test():
     server_socket = connect_to_server()
     debug("connected to the server!")
-    upload_file(server_socket, r"C:\Users\Cyber_Magshimim\Documents\EdTek stuff\week 11 (project)\Edtek-project-year1\שמירת קבצים על השרת עם ממשק גרפי ללקוח.docx.pdf")
+    upload_file(server_socket, r"server.py")
+    for i in range(10000):
+        pass
     server_socket.close()
 
 def main():
