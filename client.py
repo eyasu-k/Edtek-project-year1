@@ -18,9 +18,13 @@ def upload_file(server: socket.socket, file_path: str)-> None:
     file = explorer.get_file(file_path)
     file_size = len(file)
     file_name = explorer.get_file_name(file_path)
-    request = const.DELIMITER.join([const.UPLOAD, file_name, file_size])
+    debug(f"Uploading a file: size = {file_size}, name = {file_name}")
+    request = const.DELIMITER.join([const.UPLOAD, file_name, str(file_size)])
     server.sendall(request.encode())
+    debug("first upload request sent. the request:", request)
     server.sendall(file)
+    debug("second upload data sent: the data: ")
+    debug(file)
 
 def download_file(server: socket.socket, file_name: str, file_size: int)-> None:
     request = const.DELIMITER.join([DOWNLOAD, file_name])
@@ -47,17 +51,22 @@ def delete_file(server: socket.socket, file_name: str)-> None:
     request = const.DELIMITER.join([const.DELETE, file_name])
     server.sendall(request.encode())
 
-def connect_to_server(ip: str, port: int)-> socket.socket:
+def connect_to_server()-> socket.socket:
     try:
         client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        client_socket.connect((ip, port))
+        client_socket.connect((IP, PORT))
         return client_socket
     except Exception as e:
         print("Error connecting to the server. more details:\n", e)
 
+def test():
+    server_socket = connect_to_server()
+    debug("connected to the server!")
+    upload_file(server_socket, r"C:\Users\Cyber_Magshimim\Documents\EdTek stuff\week 11 (project)\Edtek-project-year1\שמירת קבצים על השרת עם ממשק גרפי ללקוח.docx.pdf")
+    server_socket.close()
 
 def main():
-    pass
+    test()
 
 if __name__ == '__main__':
     main()
