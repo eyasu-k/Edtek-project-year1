@@ -1,7 +1,7 @@
 import socket
 import constants as const
 import file_manager as explorer
-from constants import DOWNLOAD
+from constants import DOWNLOAD, DEFAULT_BUFFER_SIZE
 
 DEBUG_PRINTS = True
 IP = "127.0.0.1"
@@ -19,7 +19,7 @@ def upload_file(server: socket.socket, file_path: str)-> None:
     file_size = len(file)
     file_name = explorer.get_file_name(file_path)
     request = const.DELIMITER.join([const.UPLOAD, file_name, file_size])
-    server.sendall(request)
+    server.sendall(request.encode())
     server.sendall(file)
 
 def download_file(server: socket.socket, file_name: str, file_size: int)-> None:
@@ -29,6 +29,23 @@ def download_file(server: socket.socket, file_name: str, file_size: int)-> None:
     destination = DEFAULT_DOWNLOAD_DST+'/'+file_name
     explorer.create_file(destination, file)
 
+def get_file_list(server: socket.socket)-> list[dict]:
+    request = const.DELIMITER.join([const.LIST])
+    server.sendall(request.encode())
+    response = server.recv(DEFAULT_BUFFER_SIZE).decode()
+    _,  files= response.split(const.DELIMITER)
+    files_list = []
+    for file_data in files.split(const.FILES_DELIMITER):
+        new_file_data = {}
+        file_name, file_size = file_data.split(const.FILE_ATTRIBUTE_DELIMITER)
+        new_file_data["name"] = file_name
+        new_file_data["size"] = file_size
+        files_list.append(new_file_data)
+    return files_list
+
+def delete_file(server: socket.socket, file_name: str)-> None:
+    request = const.DELIMITER.join([const.DELETE, file_name])
+    server.sendall(request.encode())
 
 def connect_to_server(ip: str, port: int)-> socket.socket:
     try:
