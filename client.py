@@ -1,6 +1,7 @@
 import socket
 import constants as const
 import file_manager as explorer
+from constants import DOWNLOAD
 
 DEBUG_PRINTS = True
 IP = "127.0.0.1"
@@ -20,6 +21,14 @@ def upload_file(server: socket.socket, file_path: str)-> None:
     request = const.DELIMITER.join([const.UPLOAD, file_name, file_size])
     server.sendall(request)
     server.sendall(file)
+
+def download_file(server: socket.socket, file_name: str, file_size: int)-> None:
+    request = const.DELIMITER.join([DOWNLOAD, file_name])
+    server.sendall(request)
+    file = server.recv(file_size)
+    destination = DEFAULT_DOWNLOAD_DST+'/'+file_name
+    explorer.create_file(destination, file)
+
 
 def connect_to_server(ip: str, port: int)-> socket.socket:
     try:
