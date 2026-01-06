@@ -29,7 +29,7 @@ def send_file(client: socket.socket, file_name: str, *_)-> None:
 def send_file_list(client: socket.socket, *_)-> None:
     files = []
     for file in explorer.get_files_list(const.SERVER_FILES_FOLDER_NAME):
-        file_size = str(explorer.get_file_size(file))
+        file_size = str(explorer.get_file_size(const.SERVER_FILES_FOLDER_NAME+'/'+file))
         files.append(file+const.FILE_ATTRIBUTE_DELIMITER+file_size)
     files_joined = const.FILES_DELIMITER.join(files)
     response = const.R_LIST+DELIMITER+files_joined
