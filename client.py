@@ -38,19 +38,16 @@ def download_file(server: socket.socket, file_name: str, file_size: int)-> None:
     destination = DEFAULT_DOWNLOAD_DST+'/'+file_name
     explorer.create_file(destination, file)
 
-def get_file_list(server: socket.socket)-> list[dict]:
+def get_file_list(server: socket.socket)-> dict:
     request = const.DELIMITER.join([const.LIST])
     server.sendall(request.encode())
     response = server.recv(DEFAULT_BUFFER_SIZE).decode()
     _,  files= response.split(const.DELIMITER)
-    files_list = []
+    files_data = {}
     for file_data in files.split(const.FILES_DELIMITER):
-        new_file_data = {}
         file_name, file_size = file_data.split(const.FILE_ATTRIBUTE_DELIMITER)
-        new_file_data["name"] = file_name
-        new_file_data["size"] = file_size
-        files_list.append(new_file_data)
-    return files_list
+        files_data[file_name] = file_size
+    return files_data
 
 def delete_file(server: socket.socket, file_name: str)-> None:
     request = const.DELIMITER.join([const.DELETE, file_name])
@@ -67,7 +64,7 @@ def connect_to_server()-> socket.socket:
 def test():
     server_socket = connect_to_server()
     debug("connected to the server!")
-    download_file(server_socket, "server.py", 10000000)
+    print(get_file_list(server_socket))
     server_socket.close()
 
 def main():

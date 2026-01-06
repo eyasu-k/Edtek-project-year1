@@ -29,6 +29,9 @@ def delete_file(filename: str)-> bool:
         return True
     return False
 
+def get_file_size(filename: str)-> int:
+    return os.path.getsize(filename)
+
 def get_downloads_path():
     return os.path.join(os.path.expanduser('~'), "Downloads")
 
