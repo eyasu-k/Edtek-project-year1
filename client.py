@@ -64,7 +64,7 @@ def connect_to_server()-> socket.socket:
 def test():
     server_socket = connect_to_server()
     debug("connected to the server!")
-    print(get_file_list(server_socket))
+    delete_file(server_socket, "server.py")
     server_socket.close()
 
 def main():
