@@ -4,7 +4,7 @@ import file_manager as explorer
 from constants import DOWNLOAD, DEFAULT_BUFFER_SIZE
 
 DEBUG_PRINTS = True
-IP = "192.168.1.203"#"127.0.0.1"
+IP = "127.0.0.1"
 PORT = 12345
 
 DEFAULT_DOWNLOAD_DST = explorer.get_downloads_path()
@@ -33,7 +33,7 @@ def upload_file(server: socket.socket, file_path: str)-> bool:
 
 def download_file(server: socket.socket, file_name: str, file_size: int)-> None:
     request = const.DELIMITER.join([DOWNLOAD, file_name])
-    server.sendall(request)
+    server.sendall(request.encode())
     file = server.recv(file_size)
     destination = DEFAULT_DOWNLOAD_DST+'/'+file_name
     explorer.create_file(destination, file)
@@ -67,9 +67,7 @@ def connect_to_server()-> socket.socket:
 def test():
     server_socket = connect_to_server()
     debug("connected to the server!")
-    upload_file(server_socket, r"server.py")
-    for i in range(10000):
-        pass
+    download_file(server_socket, "server.py", 10000000)
     server_socket.close()
 
 def main():
