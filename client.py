@@ -1,10 +1,13 @@
 import socket
+from fileinput import filename
+
 import constants as const
 import file_manager as explorer
 
 import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
+from tkinter import filedialog
 
 DEBUG_PRINTS = True
 IP = "127.0.0.1"
@@ -23,7 +26,7 @@ BACKGROUND_COLOR = "#FFFFFF"
 BACKGROUND_COLOR2 = "#FFFFFF"
 DEFAULT_BUTTON_BG = "#3D3D3D"
 
-BUTTON_COLORS = {"update_file_list": "#296AC9", "quit": "#C94A3D"}
+BUTTON_COLORS = {"update_file_list": "#296AC9", "quit": "#C94A3D", "upload": "#5CC950"}
 
 TEXT_COLOR = "#FFFFFF"
 FONT = ("Unispace", 13)
@@ -127,6 +130,12 @@ def update_files_list(main_frame: tk.Frame, server: socket.socket)-> None:
                                    command = lambda name = file_name: tk.messagebox.showinfo("delete", f"delete {name}")))
         delete_button.grid(row = row, column = 2, pady=0, padx = 10)
 
+def upload_file_dialog(server: socket.socket)-> str:
+    file_name = tk.filedialog.askopenfilename(initialdir='/', title="Select a file", filetypes=(("all files", "*.*"), ("", "")))
+    debug(f"Chosen file--> filename: {file_name}")
+    upload_file(server, file_name)
+    return file_name
+
 #functions that deal with both the gui and the client-server connections:
 def quit_app(window_root: tk.Tk, server_socket: socket.socket)-> None:
     server_socket.close()
@@ -157,6 +166,11 @@ def main():
                                    bg=BUTTON_COLORS["update_file_list"], width = ACTIONS_LIST_WIDTH - 30
                                    , borderwidth=0, command = lambda : update_files_list(main_files_list_frame, server_socket))
     get_files_list_btn.pack(padx = 15, pady = 20, side=tk.TOP)
+
+    upload_file_btn = tk.Button(actions_list_frame, text = "Upload a file", fg = TEXT_COLOR, font = FONT,
+                                   bg=BUTTON_COLORS["upload"], width = ACTIONS_LIST_WIDTH - 30
+                                   , borderwidth=0, command = lambda: upload_file_dialog(server_socket))
+    upload_file_btn.pack(padx = 15, pady = 20, side=tk.TOP)
 
     quit_btn = tk.Button(actions_list_frame, text = "Quit", fg = TEXT_COLOR, font = FONT,
                                    bg=BUTTON_COLORS["quit"], width = 450, borderwidth=0, command = lambda: quit_app(root, server_socket))
