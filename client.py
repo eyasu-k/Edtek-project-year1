@@ -1,5 +1,5 @@
 import socket
-from fileinput import filename
+from ClientException import ClientException
 
 import constants as const
 import file_manager as explorer
@@ -37,21 +37,24 @@ def debug(*msg)-> None:
         print("Debug print: ", *msg)
 
 #functions that deal with connections with the server:
-def upload_file(server: socket.socket, file_path: str)-> bool:
+def upload_file(server: socket.socket, file_path: str)-> None:
     file = explorer.get_file(file_path)
-    file_size = len(file)
-    file_name = explorer.get_file_name(file_path)
+    file_size, file_name = len(file), explorer.get_file_name(file_path)
     debug(f"Uploading a file: size = {file_size}, name = {file_name}")
     request = const.DELIMITER.join([const.UPLOAD, file_name, str(file_size)])
-    server.sendall(request.encode())
+    server.sendall(request.encode())# sending to the server the file data so the server could choose the right buffer size to download the file
     debug("first upload request sent. the request:", request)
     response = server.recv(1024).decode()
-    if response == const.SUCCESS:
+    if response == const.ACK:#if the server doesn't acknowledge the file data sent, the function skips the code below and returns False.
         server.sendall(file)
-        debug("second upload data sent: the data: ")
-        debug(file)
-        return True
-    return False
+        debug("second upload: the whole file content sent to the server.")
+        last_response = server.recv(const.DEFAULT_BUFFER_SIZE).decode()
+        _response_type, result = last_response.split(const.DELIMITER)
+        debug("last response from the server:", last_response)
+        if result != const.SUCCESS:
+            raise ClientException("Upload failed, host didn't respond with a success message.")
+    else:
+        raise ClientException("Upload failed, host didn't respond with an ack message.")
 
 def download_file(server: socket.socket, file_name: str, file_size: int)-> None:
     debug(f"a new request to download a file: filename = {file_name}, file size = {file_size}")
@@ -140,6 +143,11 @@ def upload_file_dialog(server: socket.socket)-> str:
 def quit_app(window_root: tk.Tk, server_socket: socket.socket)-> None:
     server_socket.close()
     window_root.quit()
+
+def test():
+    server_socket = connect_to_server()
+    upload_file(server_socket, "test.py")
+    server_socket.close()
 
 def main():
 
