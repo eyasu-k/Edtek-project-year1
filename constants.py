@@ -1,7 +1,7 @@
 #this file contains the declaration contant variables used by the client and the server.
 
 #commands:
-SUCCESS, R_DOWNLOAD, R_LIST, ERROR= "success", "r_download", "r_list", "error"
+SUCCESS, ACK, R_UPLOAD,R_DOWNLOAD, R_LIST, ERROR= "success", "ack", "r_upload","r_download", "r_list", "error"
 UPLOAD, DOWNLOAD, LIST, DELETE = "upload", "download", "list", "delete"
 CLIENT_COMMANDS = (UPLOAD, DOWNLOAD, LIST, DELETE)
 RESPONSES = (SUCCESS, R_DOWNLOAD, R_LIST, ERROR)
