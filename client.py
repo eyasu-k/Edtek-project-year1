@@ -1,5 +1,5 @@
 import socket
-from fileinput import filename
+from ClientException import ClientException
 
 import constants as const
 import file_manager as explorer
@@ -37,21 +37,31 @@ def debug(*msg)-> None:
         print("Debug print: ", *msg)
 
 #functions that deal with connections with the server:
-def upload_file(server: socket.socket, file_path: str)-> bool:
+def upload_file(server: socket.socket, file_path: str)-> None:
     file = explorer.get_file(file_path)
-    file_size = len(file)
-    file_name = explorer.get_file_name(file_path)
+    file_size, file_name = len(file), explorer.get_file_name(file_path)
+
     debug(f"Uploading a file: size = {file_size}, name = {file_name}")
+
     request = const.DELIMITER.join([const.UPLOAD, file_name, str(file_size)])
-    server.sendall(request.encode())
+    server.sendall(request.encode())# sending to the server the file data so the server could choose the right buffer size to download the file
     debug("first upload request sent. the request:", request)
     response = server.recv(1024).decode()
-    if response == const.SUCCESS:
+    response_type, response_msg = response.split(const.DELIMITER)
+
+    if response_type == const.ERROR:
+        raise ClientException(response_msg)
+
+    if response_type == const.R_UPLOAD and response_msg == const.ACK:#if the server doesn't acknowledge the file data sent, the function skips the code below and returns False.
         server.sendall(file)
-        debug("second upload data sent: the data: ")
-        debug(file)
-        return True
-    return False
+        debug("second upload: the whole file content sent to the server.")
+        last_response = server.recv(const.DEFAULT_BUFFER_SIZE).decode()
+        _response_type, result = last_response.split(const.DELIMITER)
+        debug("last response from the server:", last_response)
+        if result != const.SUCCESS:
+            raise ClientException("Upload failed, host didn't respond with a success message.")
+    else:
+        raise ClientException("Upload failed, host didn't respond with an ack message.")
 
 def download_file(server: socket.socket, file_name: str, file_size: int)-> None:
     debug(f"a new request to download a file: filename = {file_name}, file size = {file_size}")
@@ -120,31 +130,46 @@ def update_files_list(main_frame: tk.Frame, server: socket.socket)-> None:
 
 
         download_button = tk.Button(second_frame, text="download", font = FONT, highlightthickness=0, borderwidth=0,
-                                    relief=tk.FLAT,
-                                    command = lambda name = file_name, size = file_size: tk.messagebox.showinfo( "download",f"download {name}, size: {size}"))
+                                    relief=tk.FLAT, width = 10,
+                                    command = lambda name = file_name, size = file_size: download_file(server, name, size))
         download_button.grid(row = row, column = 1, pady=0, padx = 10)
 
 
         delete_button = (tk.Button(second_frame, text="delete", font = FONT, highlightthickness=0, borderwidth=0,
-                                   relief=tk.FLAT,
-                                   command = lambda name = file_name: tk.messagebox.showinfo("delete", f"delete {name}")))
+                                   relief=tk.FLAT, width = 10,
+                                   command = lambda name = file_name: delete_file(server, name)))
         delete_button.grid(row = row, column = 2, pady=0, padx = 10)
 
-def upload_file_dialog(server: socket.socket)-> str:
+def upload_file_dialog(server: socket.socket, files_list_frame: tk.Frame)-> str:
     file_name = tk.filedialog.askopenfilename(initialdir='/', title="Select a file", filetypes=(("all files", "*.*"), ("", "")))
     debug(f"Chosen file--> filename: {file_name}")
-    upload_file(server, file_name)
+    try:
+        upload_file(server, file_name)
+    except ClientException as e:
+        messagebox.showerror("Client Exception", f"File upload failed. more details:\n{e.value}")
+    except Exception as e:
+        messagebox.showerror("Error Uploading file", f"details about the error: {str(e)}")
+    else:
+        messagebox.showinfo("File Uploaded Successfully", "Your file has been uploaded successfully.")
+        update_files_list(files_list_frame, server)#refreshing the files list
     return file_name
+
 
 #functions that deal with both the gui and the client-server connections:
 def quit_app(window_root: tk.Tk, server_socket: socket.socket)-> None:
     server_socket.close()
     window_root.quit()
 
+def test():
+    server_socket = connect_to_server()
+    upload_file(server_socket, "test.py")
+    server_socket.close()
+
 def main():
 
     server_socket = connect_to_server()
 
+    update_list = lambda : update_files_list(files_list_frame, server_socket)
 
     root = tk.Tk()
     root.title("Eyasu Drive 1.0")
@@ -155,30 +180,30 @@ def main():
     files_list_frame = tk.Frame(root, bg = BACKGROUND_COLOR2,height= FILES_LIST_HEIGHT, width = FILES_LIST_WIDTH)
     files_list_frame.pack(padx = 10, pady = 10, side = tk.LEFT)
 
-    main_files_list_frame = tk.Frame(files_list_frame, width = FILES_LIST_WIDTH, height = FILES_LIST_HEIGHT)
+    files_list_frame = tk.Frame(files_list_frame, width = FILES_LIST_WIDTH, height = FILES_LIST_HEIGHT)
 
     actions_list_frame = tk.Frame(root, bg = BACKGROUND_COLOR,height= ACTIONS_LIST_HEIGHT, width = ACTIONS_LIST_WIDTH)
-    actions_list_frame.pack(padx = 10, pady = 10, side = tk.LEFT)
-    actions_list_frame.pack_forget()
-    actions_list_frame.pack(padx = 10, pady = 10, side = tk.LEFT)
+    actions_list_frame.place(x = FILES_LIST_WIDTH +10, y = 10)#pack(padx = 10, pady = 10, side = tk.LEFT)
 
     get_files_list_btn = tk.Button(actions_list_frame, text = "Update files list", fg = TEXT_COLOR, font = FONT,
-                                   bg=BUTTON_COLORS["update_file_list"], width = ACTIONS_LIST_WIDTH - 30
-                                   , borderwidth=0, command = lambda : update_files_list(main_files_list_frame, server_socket))
-    get_files_list_btn.pack(padx = 15, pady = 20, side=tk.TOP)
+                                   bg=BUTTON_COLORS["update_file_list"], width = 45
+                                   , borderwidth=0, command = update_list)
+    get_files_list_btn.pack(padx = 5, pady = 10, side=tk.TOP)
 
     upload_file_btn = tk.Button(actions_list_frame, text = "Upload a file", fg = TEXT_COLOR, font = FONT,
-                                   bg=BUTTON_COLORS["upload"], width = ACTIONS_LIST_WIDTH - 30
-                                   , borderwidth=0, command = lambda: upload_file_dialog(server_socket))
-    upload_file_btn.pack(padx = 15, pady = 20, side=tk.TOP)
+                                   bg=BUTTON_COLORS["upload"], width = 45
+                                   , borderwidth=0, command = lambda: upload_file_dialog(server_socket, files_list_frame))
+    upload_file_btn.pack(padx = 5, pady = 10, side=tk.TOP)
 
     quit_btn = tk.Button(actions_list_frame, text = "Quit", fg = TEXT_COLOR, font = FONT,
-                                   bg=BUTTON_COLORS["quit"], width = 450, borderwidth=0, command = lambda: quit_app(root, server_socket))
-    quit_btn.pack(padx = 15, pady = 20, side=tk.TOP)
+                                   bg=BUTTON_COLORS["quit"], width = 45
+                                   , borderwidth=0, command = lambda: quit_app(root, server_socket))
+    quit_btn.pack(padx = 5, pady = 10, side=tk.TOP)
 
-
+    update_list()
 
     root.mainloop()
+
 
 if __name__ == '__main__':
     main()

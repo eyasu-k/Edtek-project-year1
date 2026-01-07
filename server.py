@@ -1,7 +1,9 @@
 import socket
 import constants as const
 import file_manager as explorer
-from constants import DELIMITER
+import os
+
+from ServerException import ServerException
 
 PORT = 12345
 DEBUG_PRINTS = True
@@ -10,16 +12,33 @@ def debug(*msg)-> None:
     if DEBUG_PRINTS:
         print("Debug print: ", *msg)
 
-def receive_file(client: socket.socket, file_name: str, file_size: str, *_)-> None:
+def error(client_socket: socket.socket, message: str)-> None:
+    error_msg = const.DELIMITER.join([const.ERROR, message])
+    client_socket.sendall(error_msg.encode())
+
+def receive_file(client: socket.socket, file_name: str, file_size: str, *_)-> None:# this function handles upload requests from the client.
+    if int(file_size) > const.MAXIMUM_FILE_SIZE:
+        error(client, f"Maximum file upload size is exceeded. The maximum file upload size is {const.MAXIMUM_FILE_SIZE}")
+        raise ServerException(f"Maximum file upload size is exceeded. The maximum file upload size is {const.MAXIMUM_FILE_SIZE}")
+
     debug("The client has chosen to upload a file.")
+    ack_response = const.DELIMITER.join([const.R_UPLOAD, const.ACK]).encode()
+    client.sendall(ack_response) #sending an acknowledgement message to the client so that it can send the file contents
+    debug("Sent an acknowledgement message to the client. the response =", ack_response.decode())
 
-    client.sendall(const.SUCCESS.encode())
-
-    file_path = const.SERVER_FILES_FOLDER_NAME+'/'+file_name
+    #preparing a location for the file the server is going to receive
     explorer.create_new_folder(const.SERVER_FILES_FOLDER_NAME)
-    file_content = client.recv(int(file_size))
+    file_path = os.path.join(const.SERVER_FILES_FOLDER_NAME, file_name)
+
+    #creating the file after receiving its contents
+    file_content = client.recv(int(file_size)+const.EXTRA_BUFFER_SIZE)#the download buffer is increased by EXTRA_BUFFER_SIZE in case the file size is increased when it's transported
     explorer.create_file(file_path, file_content)
-    client.sendall(const.SUCCESS.encode())
+    #sending a final message letting the client know that the file is received
+
+    debug("Downloaded the file from the client. the file is now at:", file_path)
+    success_message = const.DELIMITER.join([const.R_UPLOAD, const.SUCCESS]).encode()
+    client.sendall(success_message)#sending to the client a success message
+    debug("Sent a success message to the client. the success message:", success_message.decode())
 
 def send_file(client: socket.socket, file_name: str, *_)-> None:
     file_path = const.SERVER_FILES_FOLDER_NAME+'/'+file_name
@@ -32,7 +51,7 @@ def send_file_list(client: socket.socket, *_)-> None:
         file_size = str(explorer.get_file_size(const.SERVER_FILES_FOLDER_NAME+'/'+file))
         files.append(file+const.FILE_ATTRIBUTE_DELIMITER+file_size)
     files_joined = const.FILES_DELIMITER.join(files)
-    response = const.R_LIST+DELIMITER+files_joined
+    response = const.R_LIST+const.DELIMITER+files_joined
     client.sendall(response.encode())
 
 def delete_file(_client: socket.socket, file_name: str,*_)-> None:
