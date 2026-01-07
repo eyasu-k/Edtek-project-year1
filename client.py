@@ -48,8 +48,9 @@ def upload_file(server: socket.socket, file_path: str)-> None:
     debug("first upload request sent. the request:", request)
     response = server.recv(1024).decode()
     response_type, response_msg = response.split(const.DELIMITER)
-
+    debug("server response:", response)
     if response_type == const.ERROR:
+        debug("ClientException:", response_msg)
         raise ClientException(response_msg)
 
     if response_type == const.R_UPLOAD and response_msg == const.ACK:#if the server doesn't acknowledge the file data sent, the function skips the code below and returns False.
@@ -133,7 +134,7 @@ def update_files_list(main_frame: tk.Frame, server: socket.socket)-> None:
     for row, file_data in enumerate(files_list.items()):
 
         file_name, file_size = file_data
-        file_data = f"{file_name:<40}|{file_size:<10}"
+        file_data = f"{explorer.format_file_name(file_name, 40):<40}|{explorer.format_file_size(int(file_size)):<10}"
 
         tk.Label(second_frame, text = file_data, font = FONT).grid(row = row, column = 0, pady = 10, padx = 10)
 

@@ -47,3 +47,25 @@ def get_file_types(file_name: str)-> tuple[tuple[str,str], tuple[str,str]]:
         file_type = file_name_extension.upper() + " File"
         return (file_type, "*."+file_name_extension), all_files
 
+def format_file_name(file_name: str, max_len: int)-> str:
+    if len(file_name) <= max_len:
+        return file_name
+    file_type = ''
+    if '.' in file_name:
+        file_type = '.'+file_name.split('.')[-1]
+    file_type_length = len(file_type)
+    file_name_prefix = '...'
+    new_file_length = max_len - len(file_name_prefix) - file_type_length
+    formatted_file_name = file_name[:new_file_length]+file_name_prefix+file_type
+    return formatted_file_name
+
+def format_file_size(file_size: int)-> str:
+    if file_size <= 1_024:
+        return str(file_size) + "Bytes"
+    if 1_024 <= file_size < 1_048_576:
+        return str(round(file_size/1_024, 2)) + "Kb"
+    if 1_048_576 <= file_size < 1_073_741_824:
+        return str(round(file_size/1_073_741_824, 2)) + "Mb"
+    return str(file_size)
+
+

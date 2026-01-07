@@ -73,7 +73,10 @@ def serve_client(client: socket.socket)-> bool:
         new_request = client.recv(const.DEFAULT_BUFFER_SIZE).decode()
         debug("New client request:", new_request)
         command, *parameters = new_request.split(const.DELIMITER)
-        actions[command](client, *parameters)
+        try:
+            actions[command](client, *parameters)
+        except ServerException as e:
+            debug("Server Exception:", e.value)
         return True
     except Exception as e:
         print("Internal server error:\n", e)
