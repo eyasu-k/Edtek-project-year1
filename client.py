@@ -68,10 +68,19 @@ def download_file(server: socket.socket, file_name: str, file_size: int)-> None:
     request = const.DELIMITER.join([const.DOWNLOAD, file_name])
     debug(f"the request message:", request)
     server.sendall(request.encode())
-    file = server.recv(file_size)
-    destination = DEFAULT_DOWNLOAD_DST+'/'+file_name
-    explorer.create_file(destination, file)
-    debug("file downloaded successfully!!")
+    server_confirmation = server.recv(const.DEFAULT_BUFFER_SIZE).decode()
+    response_type, response_msg = server_confirmation.split(const.DELIMITER)
+    debug("Server's response for the request:", server_confirmation)
+
+    if response_type == const.R_DOWNLOAD and response_msg == const.ERROR:
+        raise ClientException(response_msg)
+
+    if response_type == const.R_DOWNLOAD and response_msg == const.ACK:
+        file = server.recv(int(file_size)+const.EXTRA_BUFFER_SIZE)
+        #using tkinter file dialog to choose the destination of the file to be downloaded
+        destination = filedialog.asksaveasfilename(initialfile=file_name, initialdir=DEFAULT_DOWNLOAD_DST, filetypes=explorer.get_file_types(file_name))
+        explorer.create_file(destination, file)
+        debug("file downloaded successfully!!")
 
 def get_file_list(server: socket.socket)-> dict:
     debug("a new request to receive the files list.")
@@ -131,7 +140,7 @@ def update_files_list(main_frame: tk.Frame, server: socket.socket)-> None:
 
         download_button = tk.Button(second_frame, text="download", font = FONT, highlightthickness=0, borderwidth=0,
                                     relief=tk.FLAT, width = 10,
-                                    command = lambda name = file_name, size = file_size: download_file(server, name, size))
+                                    command = lambda name = file_name, size = file_size: download_file_dialog(server, name, size))
         download_button.grid(row = row, column = 1, pady=0, padx = 10)
 
 
@@ -140,7 +149,7 @@ def update_files_list(main_frame: tk.Frame, server: socket.socket)-> None:
                                    command = lambda name = file_name: delete_file(server, name)))
         delete_button.grid(row = row, column = 2, pady=0, padx = 10)
 
-def upload_file_dialog(server: socket.socket, files_list_frame: tk.Frame)-> str:
+def upload_file_dialog(server: socket.socket, files_list_frame: tk.Frame)-> None:
     file_name = tk.filedialog.askopenfilename(initialdir='/', title="Select a file", filetypes=(("all files", "*.*"), ("", "")))
     debug(f"Chosen file--> filename: {file_name}")
     try:
@@ -152,7 +161,16 @@ def upload_file_dialog(server: socket.socket, files_list_frame: tk.Frame)-> str:
     else:
         messagebox.showinfo("File Uploaded Successfully", "Your file has been uploaded successfully.")
         update_files_list(files_list_frame, server)#refreshing the files list
-    return file_name
+
+def download_file_dialog(server: socket.socket, file_name: str, file_size: int)-> None:
+    debug("Download file dialog:")
+    try:
+        download_file(server, file_name, file_size)
+    except ClientException as e:
+        messagebox.showerror("File Download Error", f"The file download failed. more details:\n{e.value}")
+    else:
+        messagebox.showinfo("File Download Info", f"File downloaded successfully")
+        debug(f"the file '{file_name}' downloaded successfully!. updating the files list")
 
 
 #functions that deal with both the gui and the client-server connections:

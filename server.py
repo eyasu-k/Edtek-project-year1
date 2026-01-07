@@ -41,7 +41,16 @@ def receive_file(client: socket.socket, file_name: str, file_size: str, *_)-> No
     debug("Sent a success message to the client. the success message:", success_message.decode())
 
 def send_file(client: socket.socket, file_name: str, *_)-> None:
+    debug("Responding to the user downloading a file: ")
+    debug("The file to send to the user: ", file_name)
     file_path = const.SERVER_FILES_FOLDER_NAME+'/'+file_name
+    if not explorer.file_exists(file_path):
+        error(client, "File doesn't exist in the server.")
+        raise ServerException("User tried to download a non-existing file.")
+    ack_message = const.DELIMITER.join([const.R_DOWNLOAD, const.ACK]).encode()
+    client.sendall(ack_message)
+    debug("ack message sent to the client, the message:", ack_message)
+
     file_contents = explorer.get_file(file_path)
     client.sendall(file_contents)
 

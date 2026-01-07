@@ -37,3 +37,13 @@ def get_downloads_path():
 
 def get_file_name(file_path: str)-> str:
     return os.path.basename(file_path)
+
+def get_file_types(file_name: str)-> tuple[tuple[str,str], tuple[str,str]]:
+    all_files = ("All files", '*.*')
+    if '.' not in file_name:
+        return all_files, all_files
+    else:
+        file_name_extension = file_name.split('.')[-1]
+        file_type = file_name_extension.upper() + " File"
+        return (file_type, "*."+file_name_extension), all_files
+
