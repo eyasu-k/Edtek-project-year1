@@ -186,7 +186,16 @@ def test():
 
 def main():
 
-    server_socket = connect_to_server()
+    try:
+        server_socket = connect_to_server()
+        if server_socket is None:
+            raise Exception("Host server not found.")
+    except Exception as e:
+        root =tk.Tk()#a tkinter root for the message box below
+        root.withdraw()#hiding the root widow so only the message box will be shown
+        messagebox.showerror("Connection Error.", "Error Connecting to the Eyasu drive server. More details:\n"+str(e))
+        root.quit()
+        exit(-1)
 
     update_list = lambda : update_files_list(files_list_frame, server_socket)
 
