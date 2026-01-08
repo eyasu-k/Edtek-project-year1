@@ -15,7 +15,6 @@ PORT = 12345
 
 DEFAULT_DOWNLOAD_DST = explorer.get_downloads_path()
 
-
 WIDTH = 1280
 HEIGHT = 720
 
@@ -23,7 +22,7 @@ FILES_LIST_WIDTH, FILES_LIST_HEIGHT = 800, 720
 ACTIONS_LIST_WIDTH, ACTIONS_LIST_HEIGHT = 480, 700
 
 BACKGROUND_COLOR = "#FFFFFF"
-BACKGROUND_COLOR2 = "#FFFFFF"
+BACKGROUND_COLOR2 = "#3d3d3d"
 DEFAULT_BUTTON_BG = "#3D3D3D"
 
 BUTTON_COLORS = {"update_file_list": "#296AC9", "quit": "#C94A3D", "upload": "#5CC950"}
@@ -80,6 +79,9 @@ def download_file(server: socket.socket, file_name: str, file_size: int)-> None:
         file = server.recv(int(file_size)+const.EXTRA_BUFFER_SIZE)
         #using tkinter file dialog to choose the destination of the file to be downloaded
         destination = filedialog.asksaveasfilename(initialfile=file_name, initialdir=DEFAULT_DOWNLOAD_DST, filetypes=explorer.get_file_types(file_name))
+        if not destination:#incase the user canceled file download
+            debug("file download canceled.")
+            raise ClientException("File download canceled.")
         explorer.create_file(destination, file)
         debug("file downloaded successfully!!")
 
@@ -121,13 +123,13 @@ def update_files_list(main_frame: tk.Frame, server: socket.socket)-> None:
         if not isinstance(widget, tk.Scrollbar):
             widget.destroy()
     main_frame.place(y=0, x = 0)
-    my_canvas = tk.Canvas(main_frame, width= FILES_LIST_WIDTH-20, height=FILES_LIST_HEIGHT, bg=BACKGROUND_COLOR2)
+    my_canvas = tk.Canvas(main_frame, width= FILES_LIST_WIDTH-20, height=FILES_LIST_HEIGHT, bg=BACKGROUND_COLOR)
     my_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=1)
     my_scrollbar = tk.ttk.Scrollbar(main_frame, orient=tk.VERTICAL, command=my_canvas.yview)
     my_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
     my_canvas.configure(yscrollcommand=my_scrollbar.set)
     my_canvas.bind('<Configure>', lambda e: my_canvas.configure(scrollregion=my_canvas.bbox("all")))
-    second_frame = tk.Frame(my_canvas, bg=BACKGROUND_COLOR2, height = FILES_LIST_HEIGHT)
+    second_frame = tk.Frame(my_canvas, bg=BACKGROUND_COLOR, height = FILES_LIST_HEIGHT)
     my_canvas.create_window((0, 0), window=second_frame, anchor="nw")
 
     files_list = get_file_list(server)
@@ -147,7 +149,7 @@ def update_files_list(main_frame: tk.Frame, server: socket.socket)-> None:
 
         delete_button = (tk.Button(second_frame, text="delete", font = FONT, highlightthickness=0, borderwidth=0,
                                    relief=tk.FLAT, width = 10,
-                                   command = lambda name = file_name: delete_file(server, name)))
+                                   command = lambda name = file_name: delete_file_dialog(server, name, main_frame)))
         delete_button.grid(row = row, column = 2, pady=0, padx = 10)
 
 def upload_file_dialog(server: socket.socket, files_list_frame: tk.Frame)-> None:
@@ -173,16 +175,21 @@ def download_file_dialog(server: socket.socket, file_name: str, file_size: int)-
         messagebox.showinfo("File Download Info", f"File downloaded successfully")
         debug(f"the file '{file_name}' downloaded successfully!. updating the files list")
 
+def delete_file_dialog(server: socket.socket, file_name: str, files_list_frame: tk.Frame)-> None:
+    delete_choice = messagebox.askyesno("Delete File", f"Files are permanently deleted only in the server.\nAre you sure you want to delete '{explorer.get_file_name(file_name)}?'")
+    if delete_choice == tk.NO:
+        return
+    try:
+        delete_file(server, file_name)
+        update_files_list(files_list_frame, server)
+    except ClientException as e:
+        debug("ClientException:", str(e))
+        messagebox.showerror("File Deletion Error", "Encountered an error while trying to delete a file. more details:"+str(e))
 
 #functions that deal with both the gui and the client-server connections:
 def quit_app(window_root: tk.Tk, server_socket: socket.socket)-> None:
     server_socket.close()
     window_root.quit()
-
-def test():
-    server_socket = connect_to_server()
-    upload_file(server_socket, "test.py")
-    server_socket.close()
 
 def main():
 
@@ -205,12 +212,12 @@ def main():
     root.configure(bg=BACKGROUND_COLOR)
     root.resizable(False, False)
 
-    files_list_frame = tk.Frame(root, bg = BACKGROUND_COLOR2,height= FILES_LIST_HEIGHT, width = FILES_LIST_WIDTH)
+    files_list_frame = tk.Frame(root, bg = BACKGROUND_COLOR,height= FILES_LIST_HEIGHT, width = FILES_LIST_WIDTH)
     files_list_frame.pack(padx = 10, pady = 10, side = tk.LEFT)
 
     files_list_frame = tk.Frame(files_list_frame, width = FILES_LIST_WIDTH, height = FILES_LIST_HEIGHT)
 
-    actions_list_frame = tk.Frame(root, bg = BACKGROUND_COLOR,height= ACTIONS_LIST_HEIGHT, width = ACTIONS_LIST_WIDTH)
+    actions_list_frame = tk.Frame(root, bg = BACKGROUND_COLOR2,height= ACTIONS_LIST_HEIGHT, width = ACTIONS_LIST_WIDTH)
     actions_list_frame.place(x = FILES_LIST_WIDTH +10, y = 10)#pack(padx = 10, pady = 10, side = tk.LEFT)
 
     get_files_list_btn = tk.Button(actions_list_frame, text = "Update files list", fg = TEXT_COLOR, font = FONT,
