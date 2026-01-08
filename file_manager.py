@@ -39,7 +39,7 @@ def get_file_name(file_path: str)-> str:
     return os.path.basename(file_path)
 
 def get_file_types(file_name: str)-> tuple[tuple[str,str], tuple[str,str]]:
-    all_files = ("All files", '*.*')
+    all_files = ("All files", '.*')
     if '.' not in file_name:
         return all_files, all_files
     else:

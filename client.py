@@ -145,6 +145,8 @@ def update_files_list(main_frame: tk.Frame, server: socket.socket)-> None:
     my_canvas.create_window((0, 0), window=second_frame, anchor="nw")
 
     files_list = get_file_list(server)
+    if not files_list:
+        return
     row = 0
     for row, file_data in enumerate(files_list.items()):
 
@@ -165,7 +167,7 @@ def update_files_list(main_frame: tk.Frame, server: socket.socket)-> None:
                                    command = lambda name = file_name: delete_file_dialog(server, name, main_frame)))
         delete_button.grid(row = row, column = 2, pady=0, padx = 10)
 
-    tk.Label(second_frame, text="", font=FILES_LIST_FONT, fg=FILES_LIST_TEXT_COLOR).grid(row=row+1, column=0, pady=10, padx=10)#adding an empty label at the end of the files list so no file will be hidden from the user when the files list is a lot
+    tk.Label(second_frame, text="", font=FILES_LIST_FONT, fg=FILES_LIST_TEXT_COLOR, bg=BACKGROUND_COLOR).grid(row=row+1, column=0, pady=10, padx=10)#adding an empty label at the end of the files list so no file will be hidden from the user when the files list is a lot
 def upload_file_dialog(server: socket.socket, files_list_frame: tk.Frame)-> None:
     file_name = tk.filedialog.askopenfilename(initialdir='/', title="Select a file", filetypes=(("all files", "*.*"), ("", "")))
     debug(f"Chosen file--> filename: {file_name}")
