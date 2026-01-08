@@ -55,13 +55,24 @@ def send_file(client: socket.socket, file_name: str, *_)-> None:
     client.sendall(file_contents)
 
 def send_file_list(client: socket.socket, *_)-> None:
+    debug("New requests from the client to list a file.")
     files = []
     for file in explorer.get_files_list(const.SERVER_FILES_FOLDER_NAME):
         file_size = str(explorer.get_file_size(const.SERVER_FILES_FOLDER_NAME+'/'+file))
         files.append(file+const.FILE_ATTRIBUTE_DELIMITER+file_size)
     files_joined = const.FILES_DELIMITER.join(files)
     response = const.R_LIST+const.DELIMITER+files_joined
-    client.sendall(response.encode())
+    response_length = len(response)
+
+    debug("Files list response length:", response_length)
+    r_list_buffer_size_response = const.DELIMITER.join([const.R_LIST, str(response_length)])
+    client.sendall(r_list_buffer_size_response.encode())
+
+    ack_response = client.recv(const.DEFAULT_BUFFER_SIZE).decode()
+    if ack_response == const.ACK:
+        client.sendall(response.encode())
+    else:
+        raise ServerException("Error sending files list to the client.")
 
 def delete_file(_client: socket.socket, file_name: str,*_)-> None:
     file_path = const.SERVER_FILES_FOLDER_NAME+'/'+file_name

@@ -93,7 +93,14 @@ def get_file_list(server: socket.socket)-> dict:
     request = const.DELIMITER.join([const.LIST])
     debug("the request message:", request)
     server.sendall(request.encode())
-    response = server.recv(const.DEFAULT_BUFFER_SIZE).decode()
+
+    #sending a 'list' request to the server to receive the buffer size to receive the files list
+    buffer_size_response = server.recv(const.DEFAULT_BUFFER_SIZE).decode()
+    _response_type, buffer_size = buffer_size_response.split(const.DELIMITER)
+    buffer_size = int(buffer_size)
+
+    server.sendall(const.ACK.encode())#sending an ack message to the server so it can send the files list now
+    response = server.recv(buffer_size+const.EXTRA_BUFFER_SIZE).decode()#receiving the files list with the adjusted buffer size
     debug(f"servers response for the files list request: {response}")
     _,  files= response.split(const.DELIMITER)
     files_data = {}
@@ -136,6 +143,7 @@ def update_files_list(main_frame: tk.Frame, server: socket.socket)-> None:
     my_canvas.create_window((0, 0), window=second_frame, anchor="nw")
 
     files_list = get_file_list(server)
+    row = 0
     for row, file_data in enumerate(files_list.items()):
 
         file_name, file_size = file_data
@@ -155,6 +163,7 @@ def update_files_list(main_frame: tk.Frame, server: socket.socket)-> None:
                                    command = lambda name = file_name: delete_file_dialog(server, name, main_frame)))
         delete_button.grid(row = row, column = 2, pady=0, padx = 10)
 
+    tk.Label(second_frame, text="", font=FONT).grid(row=row+1, column=0, pady=10, padx=10)#adding an empty label at the end of the files list so no file will be hidden from the user when the files list is a lot
 def upload_file_dialog(server: socket.socket, files_list_frame: tk.Frame)-> None:
     file_name = tk.filedialog.askopenfilename(initialdir='/', title="Select a file", filetypes=(("all files", "*.*"), ("", "")))
     debug(f"Chosen file--> filename: {file_name}")
