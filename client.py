@@ -9,8 +9,10 @@ from tkinter import ttk
 from tkinter import messagebox
 from tkinter import filedialog
 
+APP_NAME = "Eyasu Drive 1.0"
+
 DEBUG_PRINTS = True
-IP = "127.0.0.1"
+IP = "127.0.0.1"#the target is a local server.
 PORT = 12345
 
 DEFAULT_DOWNLOAD_DST = explorer.get_downloads_path()
@@ -50,6 +52,7 @@ def upload_file(server: socket.socket, file_path: str)-> None:
     request = const.DELIMITER.join([const.UPLOAD, file_name, str(file_size)])
     server.sendall(request.encode())# sending to the server the file data so the server could choose the right buffer size to download the file
     debug("first upload request sent. the request:", request)
+
     response = server.recv(1024).decode()
     response_type, response_msg = response.split(const.DELIMITER)
     debug("server response:", response)
@@ -70,15 +73,18 @@ def upload_file(server: socket.socket, file_path: str)-> None:
 
 def download_file(server: socket.socket, file_name: str, file_size: int)-> None:
     debug(f"a new request to download a file: filename = {file_name}, file size = {file_size}")
+    #sending the download request to the server:
     request = const.DELIMITER.join([const.DOWNLOAD, file_name])
     debug(f"the request message:", request)
     server.sendall(request.encode())
+
+    #recieving the server confirmation of the file
     server_confirmation = server.recv(const.DEFAULT_BUFFER_SIZE).decode()
     response_type, response_msg = server_confirmation.split(const.DELIMITER)
     debug("Server's response for the request:", server_confirmation)
 
     if response_type == const.R_DOWNLOAD and response_msg == const.ERROR:
-        raise ClientException(response_msg)
+        raise ClientException(response_msg)#the server doesn't have the file.
 
     if response_type == const.R_DOWNLOAD and response_msg == const.ACK:
         file = server.recv(int(file_size)+const.EXTRA_BUFFER_SIZE)
@@ -88,7 +94,6 @@ def download_file(server: socket.socket, file_name: str, file_size: int)-> None:
             debug("file download canceled.")
             raise ClientException("File download canceled.")
         explorer.create_file(destination, file)
-        debug("file downloaded successfully!!")
 
 def get_file_list(server: socket.socket)-> dict:
     debug("a new request to receive the files list.")
@@ -99,7 +104,7 @@ def get_file_list(server: socket.socket)-> dict:
     #sending a 'list' request to the server to receive the buffer size to receive the files list
     buffer_size_response = server.recv(const.DEFAULT_BUFFER_SIZE).decode()
     _response_type, buffer_size = buffer_size_response.split(const.DELIMITER)
-    buffer_size = int(buffer_size)
+    buffer_size = int(buffer_size)#after this line: buffer_size will equal to:  len(files_list)
 
     server.sendall(const.ACK.encode())#sending an ack message to the server so it can send the files list now
     response = server.recv(buffer_size+const.EXTRA_BUFFER_SIZE).decode()#receiving the files list with the adjusted buffer size
@@ -121,20 +126,18 @@ def delete_file(server: socket.socket, file_name: str)-> None:
     server.sendall(request.encode())
     debug("request sent successfully")
 
-def connect_to_server()-> socket.socket:
-    try:
-        client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        client_socket.connect((IP, PORT))
-        return client_socket
-    except Exception as e:
-        print("Error connecting to the server. more details:\n", e)
+def connect_to_server()-> socket.socket:#this function connects a new socket to the server and returns it
+    #this function might raise an exception so it's always run inside a try-except code block (check main() function)
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    client_socket.connect((IP, PORT))
+    return client_socket
 
 #functions that deal with the gui
 def update_files_list(main_frame: tk.Frame, server: socket.socket)-> None:
-    for widget in main_frame.winfo_children():
+    for widget in main_frame.winfo_children():#clearing every widget inside the main frame except the scroll bar so there won't be duplicate widgets
         if not isinstance(widget, tk.Scrollbar):
             widget.destroy()
-    main_frame.place(y=0, x = 0)
+    main_frame.place(x = 0, y = 10)#, side = tk.LEFT)
     my_canvas = tk.Canvas(main_frame, width= FILES_LIST_WIDTH-20, height=FILES_LIST_HEIGHT, bg=BACKGROUND_COLOR)
     my_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=1)
     my_scrollbar = tk.ttk.Scrollbar(main_frame, orient=tk.VERTICAL, command=my_canvas.yview)
@@ -148,12 +151,12 @@ def update_files_list(main_frame: tk.Frame, server: socket.socket)-> None:
     if not files_list:
         return
     row = 0
-    for row, file_data in enumerate(files_list.items()):
+    for row, file_data in enumerate(files_list.items()):#adding a download and a deleting button for every file in the file_list
 
         file_name, file_size = file_data
         file_data = f"{explorer.format_file_name(file_name, 40):<40}|{explorer.format_file_size(int(file_size)):<10}"
 
-        tk.Label(second_frame, text = file_data, fg=FILES_LIST_TEXT_COLOR,font = FILES_LIST_FONT).grid(row = row, column = 0, pady = 10, padx = 10)
+        tk.Label(second_frame, text = file_data, fg=FILES_LIST_TEXT_COLOR,font = FILES_LIST_FONT).grid(row = row, column = 0, pady = 5, padx = 10)
 
 
         download_button = tk.Button(second_frame, text="download", font = FILES_LIST_FONT, highlightthickness=0, borderwidth=0,
@@ -168,28 +171,33 @@ def update_files_list(main_frame: tk.Frame, server: socket.socket)-> None:
         delete_button.grid(row = row, column = 2, pady=0, padx = 10)
 
     tk.Label(second_frame, text="", font=FILES_LIST_FONT, fg=FILES_LIST_TEXT_COLOR, bg=BACKGROUND_COLOR).grid(row=row+1, column=0, pady=10, padx=10)#adding an empty label at the end of the files list so no file will be hidden from the user when the files list is a lot
+
 def upload_file_dialog(server: socket.socket, files_list_frame: tk.Frame)-> None:
     file_name = tk.filedialog.askopenfilename(initialdir='/', title="Select a file", filetypes=(("all files", "*.*"), ("", "")))
     debug(f"Chosen file--> filename: {file_name}")
     try:
         upload_file(server, file_name)
     except ClientException as e:
+        debug("file upload failed")
         messagebox.showerror("Client Exception", f"File upload failed. more details:\n{e.value}")
     except Exception as e:
+        debug("file upload failed")
         messagebox.showerror("Error Uploading file", f"details about the error: {str(e)}")
     else:
         messagebox.showinfo("File Uploaded Successfully", "Your file has been uploaded successfully.")
         update_files_list(files_list_frame, server)#refreshing the files list
+        debug("File uploaded Successfully")
 
 def download_file_dialog(server: socket.socket, file_name: str, file_size: int)-> None:
     debug("Download file dialog:")
     try:
         download_file(server, file_name, file_size)
     except ClientException as e:
+        debug("File download failed")
         messagebox.showerror("File Download Error", f"The file download failed. more details:\n{e.value}")
     else:
         messagebox.showinfo("File Download Info", f"File downloaded successfully")
-        debug(f"the file '{file_name}' downloaded successfully!. updating the files list")
+        debug(f"the file '{file_name}' downloaded successfully!.")
 
 def delete_file_dialog(server: socket.socket, file_name: str, files_list_frame: tk.Frame)-> None:
     delete_choice = messagebox.askyesno("Delete File", f"Files are permanently deleted only in the server.\nAre you sure you want to delete '{explorer.get_file_name(file_name)}?'")
@@ -199,16 +207,18 @@ def delete_file_dialog(server: socket.socket, file_name: str, files_list_frame: 
         delete_file(server, file_name)
         update_files_list(files_list_frame, server)
     except ClientException as e:
-        debug("ClientException:", str(e))
+        debug("File deletion failed. more details:\b\tClientException:", str(e))
         messagebox.showerror("File Deletion Error", "Encountered an error while trying to delete a file. more details:"+str(e))
 
 #functions that deal with both the gui and the client-server connections:
 def quit_app(window_root: tk.Tk, server_socket: socket.socket)-> None:
+    debug("Quitting the app")
     server_socket.close()
     window_root.quit()
 
 def main():
 
+    #connecting to the server:
     try:
         server_socket = connect_to_server()
         if server_socket is None:
@@ -220,22 +230,24 @@ def main():
         root.quit()
         exit(-1)
 
-    update_list = lambda : update_files_list(files_list_frame, server_socket)
+    #creating the gui
+    update_list = lambda : update_files_list(files_list_frame, server_socket)#a lambda function that updates the files_list_frame to contain the current files stored in the server.
 
     root = tk.Tk()
-    root.title("Eyasu Drive 1.0")
+    root.title(APP_NAME)
     root.geometry(f"{WIDTH}x{HEIGHT}")
     root.configure(bg=BACKGROUND_COLOR)
     root.resizable(False, False)
 
-    files_list_frame = tk.Frame(root, bg = BACKGROUND_COLOR,height= FILES_LIST_HEIGHT, width = FILES_LIST_WIDTH)
-    files_list_frame.pack(padx = 10, pady = 10, side = tk.LEFT)
+    #files_list_frame = tk.Frame(root, bg = BACKGROUND_COLOR,height= FILES_LIST_HEIGHT, width = FILES_LIST_WIDTH)
 
-    files_list_frame = tk.Frame(files_list_frame, width = FILES_LIST_WIDTH, height = FILES_LIST_HEIGHT)
+    files_list_frame = tk.Frame(root, width = FILES_LIST_WIDTH, height = FILES_LIST_HEIGHT)
+    files_list_frame.place(x = 10, y = 10)#, side = tk.LEFT)
 
     actions_list_frame = tk.Frame(root, bg = ACTIONS_LIST_FRAME_COLOR,height= HEIGHT, width = ACTIONS_LIST_WIDTH)
-    actions_list_frame.place(x = FILES_LIST_WIDTH +10, y = 10)#pack(padx = 10, pady = 10, side = tk.LEFT)
+    actions_list_frame.place(x = FILES_LIST_WIDTH, y = 0)
     actions_list_frame.pack_propagate(False)
+
     get_files_list_btn = tk.Button(actions_list_frame, text = "Update files list", fg = TEXT_COLOR, font = FONT,
                                    bg=BUTTON_COLORS["update_file_list"], width = 43
                                    , borderwidth=0, command = update_list)
@@ -251,7 +263,7 @@ def main():
                                    , borderwidth=0, command = lambda: quit_app(root, server_socket))
     quit_btn.pack(padx = 5, pady = 10, side=tk.TOP)
 
-    update_list()
+    update_list()#receiving the files list from the server and updating files_list_frame at the start of the app
 
     root.mainloop()
 
