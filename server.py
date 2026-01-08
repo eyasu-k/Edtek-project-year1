@@ -58,6 +58,9 @@ def send_file(client: socket.socket, file_name: str, *_)-> None:#this function h
 def send_file_list(client: socket.socket, *_)-> None:
     debug("New requests from the client to list a file.")
     files = []
+    if not explorer.file_exists(const.SERVER_FILES_FOLDER_NAME):
+        explorer.create_new_folder(const.SERVER_FILES_FOLDER_NAME)
+
     for file in explorer.get_files_list(const.SERVER_FILES_FOLDER_NAME):
         file_path = os.path.join(const.SERVER_FILES_FOLDER_NAME, file)
         file_size = str(explorer.get_file_size(file_path))

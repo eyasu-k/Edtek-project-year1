@@ -191,8 +191,8 @@ def upload_file_dialog(server: socket.socket, files_list_frame: tk.Frame)-> None
         debug("file upload failed")
         messagebox.showerror("Error Uploading file", f"details about the error: {str(e)}")
     else:
-        messagebox.showinfo("File Uploaded Successfully", "Your file has been uploaded successfully.")
         update_files_list(files_list_frame, server)#refreshing the files list
+        messagebox.showinfo("File Uploaded Successfully", "Your file has been uploaded successfully.")
         debug("File uploaded Successfully")
 
 def download_file_dialog(server: socket.socket, file_name: str, file_size: int)-> None:
