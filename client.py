@@ -22,13 +22,15 @@ FILES_LIST_WIDTH, FILES_LIST_HEIGHT = 800, 720
 ACTIONS_LIST_WIDTH, ACTIONS_LIST_HEIGHT = 480, 700
 
 BACKGROUND_COLOR = "#FFFFFF"
-BACKGROUND_COLOR2 = "#3d3d3d"
+ACTIONS_LIST_FRAME_COLOR = "#D9D9D9"
 DEFAULT_BUTTON_BG = "#3D3D3D"
 
 BUTTON_COLORS = {"update_file_list": "#296AC9", "quit": "#C94A3D", "upload": "#5CC950"}
 
 TEXT_COLOR = "#FFFFFF"
+FILES_LIST_TEXT_COLOR = "#000000"
 FONT = ("Unispace", 13)
+FILES_LIST_FONT = ("Unispace", 12)
 
 
 def debug(*msg)-> None:
@@ -149,21 +151,21 @@ def update_files_list(main_frame: tk.Frame, server: socket.socket)-> None:
         file_name, file_size = file_data
         file_data = f"{explorer.format_file_name(file_name, 40):<40}|{explorer.format_file_size(int(file_size)):<10}"
 
-        tk.Label(second_frame, text = file_data, font = FONT).grid(row = row, column = 0, pady = 10, padx = 10)
+        tk.Label(second_frame, text = file_data, fg=FILES_LIST_TEXT_COLOR,font = FILES_LIST_FONT).grid(row = row, column = 0, pady = 10, padx = 10)
 
 
-        download_button = tk.Button(second_frame, text="download", font = FONT, highlightthickness=0, borderwidth=0,
-                                    relief=tk.FLAT, width = 10,
+        download_button = tk.Button(second_frame, text="download", font = FILES_LIST_FONT, highlightthickness=0, borderwidth=0,
+                                    relief=tk.FLAT, width = 10, fg=FILES_LIST_TEXT_COLOR,
                                     command = lambda name = file_name, size = file_size: download_file_dialog(server, name, size))
         download_button.grid(row = row, column = 1, pady=0, padx = 10)
 
 
-        delete_button = (tk.Button(second_frame, text="delete", font = FONT, highlightthickness=0, borderwidth=0,
-                                   relief=tk.FLAT, width = 10,
+        delete_button = (tk.Button(second_frame, text="delete", font = FILES_LIST_FONT, highlightthickness=0, borderwidth=0,
+                                   relief=tk.FLAT, width = 10, fg=FILES_LIST_TEXT_COLOR,
                                    command = lambda name = file_name: delete_file_dialog(server, name, main_frame)))
         delete_button.grid(row = row, column = 2, pady=0, padx = 10)
 
-    tk.Label(second_frame, text="", font=FONT).grid(row=row+1, column=0, pady=10, padx=10)#adding an empty label at the end of the files list so no file will be hidden from the user when the files list is a lot
+    tk.Label(second_frame, text="", font=FILES_LIST_FONT, fg=FILES_LIST_TEXT_COLOR).grid(row=row+1, column=0, pady=10, padx=10)#adding an empty label at the end of the files list so no file will be hidden from the user when the files list is a lot
 def upload_file_dialog(server: socket.socket, files_list_frame: tk.Frame)-> None:
     file_name = tk.filedialog.askopenfilename(initialdir='/', title="Select a file", filetypes=(("all files", "*.*"), ("", "")))
     debug(f"Chosen file--> filename: {file_name}")
@@ -229,21 +231,21 @@ def main():
 
     files_list_frame = tk.Frame(files_list_frame, width = FILES_LIST_WIDTH, height = FILES_LIST_HEIGHT)
 
-    actions_list_frame = tk.Frame(root, bg = BACKGROUND_COLOR2,height= ACTIONS_LIST_HEIGHT, width = ACTIONS_LIST_WIDTH)
+    actions_list_frame = tk.Frame(root, bg = ACTIONS_LIST_FRAME_COLOR,height= HEIGHT, width = ACTIONS_LIST_WIDTH)
     actions_list_frame.place(x = FILES_LIST_WIDTH +10, y = 10)#pack(padx = 10, pady = 10, side = tk.LEFT)
-
+    actions_list_frame.pack_propagate(False)
     get_files_list_btn = tk.Button(actions_list_frame, text = "Update files list", fg = TEXT_COLOR, font = FONT,
-                                   bg=BUTTON_COLORS["update_file_list"], width = 45
+                                   bg=BUTTON_COLORS["update_file_list"], width = 43
                                    , borderwidth=0, command = update_list)
     get_files_list_btn.pack(padx = 5, pady = 10, side=tk.TOP)
 
     upload_file_btn = tk.Button(actions_list_frame, text = "Upload a file", fg = TEXT_COLOR, font = FONT,
-                                   bg=BUTTON_COLORS["upload"], width = 45
+                                   bg=BUTTON_COLORS["upload"], width = 43
                                    , borderwidth=0, command = lambda: upload_file_dialog(server_socket, files_list_frame))
     upload_file_btn.pack(padx = 5, pady = 10, side=tk.TOP)
 
     quit_btn = tk.Button(actions_list_frame, text = "Quit", fg = TEXT_COLOR, font = FONT,
-                                   bg=BUTTON_COLORS["quit"], width = 45
+                                   bg=BUTTON_COLORS["quit"], width = 43
                                    , borderwidth=0, command = lambda: quit_app(root, server_socket))
     quit_btn.pack(padx = 5, pady = 10, side=tk.TOP)
 
