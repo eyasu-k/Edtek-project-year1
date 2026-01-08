@@ -126,6 +126,13 @@ def delete_file(server: socket.socket, file_name: str)-> None:
     server.sendall(request.encode())
     debug("request sent successfully")
 
+    r_type, r = server.recv(const.DEFAULT_BUFFER_SIZE).decode().split(const.DELIMITER)
+    if r_type == const.ERROR:
+        debug(f"New error: r_type: {r_type}, msg = {r}")
+        raise ClientException(r)
+
+
+
 def connect_to_server()-> socket.socket:#this function connects a new socket to the server and returns it
     #this function might raise an exception so it's always run inside a try-except code block (check main() function)
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -207,7 +214,7 @@ def delete_file_dialog(server: socket.socket, file_name: str, files_list_frame: 
         delete_file(server, file_name)
         update_files_list(files_list_frame, server)
     except ClientException as e:
-        debug("File deletion failed. more details:\b\tClientException:", str(e))
+        debug("File deletion failed. more details:\n\tClientException:", str(e))
         messagebox.showerror("File Deletion Error", "Encountered an error while trying to delete a file. more details:"+str(e))
 
 #functions that deal with both the gui and the client-server connections:

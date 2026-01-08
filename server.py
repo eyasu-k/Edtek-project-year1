@@ -81,9 +81,17 @@ def send_file_list(client: socket.socket, *_)-> None:
         debug("The client didn't response with ack. raising an exception.")
         raise ServerException("Error sending files list to the client.")
 
-def delete_file(_client: socket.socket, file_name: str,*_)-> None:#this funciton deals with client request to delete a file
+def delete_file(client: socket.socket, file_name: str,*_)-> None:#this function deals with client request to delete a file
     file_path = os.path.join(const.SERVER_FILES_FOLDER_NAME, file_name)
+    debug("new reqeust to delete a file from the client:  file to delete:", file_name)
+    if not explorer.file_exists(file_path):
+        debug("error: file doesnt exist")
+        error(client, "File doesn't exist in the server.")
+        raise ServerException("Client requested to delete a file that doesn't exist")
+    debug("file deleted successfully")
     explorer.delete_file(file_path)
+    success_msg = const.DELIMITER.join([const.R_DELETE, const.SUCCESS])
+    client.sendall(success_msg.encode())
 
 def serve_client(client: socket.socket)-> bool:
     #this dict contains the client commands as key and a function to handle that request as value

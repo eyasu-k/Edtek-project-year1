@@ -2,42 +2,43 @@ This file contains the protocol used by the client and the server.
 
 client -> server protocols:
 
-    command:data:data2:data3:data_n
-    #valid commands are: "upload", "download", "list", "delete"
-    # data and data2 can be anything according to the command type.
+    There are 4 commands the client can use. they are: "download", "upload", "list" and "delete"
+    There are 3 status commands and they are: "ack", "error" and "success"
+    There are 4 responses the server can give. they are: "r_download", "r_upload", "r_list", "r_delete"
 
-    example of the commands:
+    commands are joined by the delimiter: ':'
+    files are joined by the delimiter: ','
+    file attributes are joined by the delimiter: ';'
 
-        "upload":
-            the protocol to upload a file: command:filename:size
-            example: upload:file.txt:1024:(file content as a string)
+    "download": this command is used by the client to download a file and the response is: "r_download".
+        steps the client and the server take to have a file transfer:
+            1. the client requests to download a file by using this command --> "download:file_name"
+            2. the server responds with "r_download:ack" if the file exists in the server, else "error:error_msg"
+             -this part is reached only if the server responded with "r_download:ack"
+            3. the server will then send to the client the requested file's contents (binary data)
+            4. the client downloads the file and save's it in the user's chosen destination
+            ----download complete----
 
-            the client will send the file contents right after sending the upload request.
-            if a file with the same name exists in the server, the file will be overwritten.
-        "download":
-            the protocol to download a file: command:filename
-            example: download:file.txt
+    "upload": this command is used by the client to upload a file to the server. the server response is: "r_upload".
+        steps the client and the server take to have a successful file upload:
+            1. the client requests an upload request in this format: "upload:filename:filesize"
+            2. the server responds with an error or an ack message: "error: error_msg" or "r_upload:ack"
+            -this part is reached only if the server responded with ack
+            3. the client sends the full file content in binary
+            4. if server successfully saves the file it responds with "r_upload:success", else "error: error msg"
+            5. the client will notify the user if the upload is successful or not
 
-            after sending the download request, the client will receive the file contents.
-        
-        "list":
-            the protocol to get a list of files: command (no data needed.)
-            example: list
-        
-        "delete":
-            the protocol to delete a file: command:filename
-            example: delete:file.txt
-        
-server -> client protocols:
-     command:data
-     #valid commands are: "success", "r_list"
-     #'data' is always a comma separated strings or a plain string.
-    
-    example of the commands:
+    "list": this command is sent by the user to receive the list of files in the server. the response is: "r_list".
+        steps the client and the server take to complete this task:
+            1. the client sends this request: "list"
+            2. the server responds with: "r_list:**length of the string containing the files_name**"
+            3. the client responds with: "ack"
+            4. the server sends the files list
+            5. the client receives the files list and uses it...
 
-        "success":
-            this command is sent when a command from the client is successful, else an error is sent. (check the "error" response)
+    "delete": this command is used by the client to delete a file in the server. server responds with "r_delete".
+        steps:
+            1. the client sends this reqeust: "delete:filename"
+            2. the server deletes the file if it exists and responds with "r_download:success" or responds with "error: error_msg" if the file doesn't exist
+            3. the client notifies the user if the file is deleted successfully or not
 
-        "r_list":
-            this command is a response for the "list" command: r_list:filename;file size, file2name ;file2 size
-            example: r_list:file.txt;file.txt size, file2.txt; file2.txt size, file3.example; file3.example size
