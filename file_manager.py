@@ -60,11 +60,11 @@ def format_file_name(file_name: str, max_len: int)-> str:
     return formatted_file_name
 
 def format_file_size(file_size: int)-> str:
-    if file_size <= 1_024:
+    if file_size <= 1_000:
         return str(file_size) + "Bytes"
-    if 1_024 <= file_size < 1_048_576:
+    if 1_000 <= file_size < 1_000_000:
         return str(round(file_size/1_024, 2)) + "Kb"
-    if 1_048_576 <= file_size < 1_073_741_824:
+    if 1_000_000 <= file_size < 1_000_000_00:
         return str(round(file_size/1_048_576, 2)) + "Mb"
     return str(file_size)
 
