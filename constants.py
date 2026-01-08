@@ -15,6 +15,6 @@ FILE_ATTRIBUTE_DELIMITER = ';'
 FILES_DELIMITER = ','
 DEFAULT_BUFFER_SIZE = 1024
 EXTRA_BUFFER_SIZE = 500
-MAXIMUM_FILE_SIZE = 16_000_000 #the maximum file size allowed is 16Mb (like said in the instructions)
+MAXIMUM_FILE_SIZE = 16_777_216 #the maximum file size allowed is 16Mb (like said in the instructions)
 
 SERVER_FILES_FOLDER_NAME = "server_files"

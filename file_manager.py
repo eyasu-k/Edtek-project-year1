@@ -65,7 +65,7 @@ def format_file_size(file_size: int)-> str:
     if 1_024 <= file_size < 1_048_576:
         return str(round(file_size/1_024, 2)) + "Kb"
     if 1_048_576 <= file_size < 1_073_741_824:
-        return str(round(file_size/1_073_741_824, 2)) + "Mb"
+        return str(round(file_size/1_048_576, 2)) + "Mb"
     return str(file_size)
 
 

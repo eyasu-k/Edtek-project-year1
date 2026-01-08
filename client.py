@@ -40,6 +40,9 @@ def upload_file(server: socket.socket, file_path: str)-> None:
     file = explorer.get_file(file_path)
     file_size, file_name = len(file), explorer.get_file_name(file_path)
 
+    if file_size > const.MAXIMUM_FILE_SIZE:
+        raise ClientException(f"Maximum file Size Exceeded. All files must be less than {explorer.format_file_size(const.MAXIMUM_FILE_SIZE)}.")
+
     debug(f"Uploading a file: size = {file_size}, name = {file_name}")
 
     request = const.DELIMITER.join([const.UPLOAD, file_name, str(file_size)])
